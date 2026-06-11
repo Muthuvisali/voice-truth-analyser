@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Truth Analyser — Data Collection</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem}
+.app{width:100%;max-width:520px;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+.screen{display:none}.screen.active{display:block}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.logo-icon{font-size:24px}
+.logo h1{font-size:20px;font-weight:600;color:#1a1a1a}
+.tagline{font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.6}
+.info-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;padding:14px;background:#f0faf5;border-radius:10px}
+.info-item{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#444}
+.info-dot{width:18px;height:18px;background:#1D9E75;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.info-dot svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:1.5}
+input[type=text]{width:100%;font-size:14px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:10px;margin-bottom:1rem;outline:none;transition:border .15s;background:#fff;color:#1a1a1a}
+input[type=text]:focus{border-color:#1D9E75}
+.btn-primary{width:100%;padding:13px;background:#1D9E75;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.btn-primary:hover{background:#0F6E56}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-secondary{width:100%;padding:12px;background:#f5f5f5;color:#444;border:1.5px solid #e0e0e0;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;margin-top:10px}
+.btn-secondary:hover{background:#ebebeb}
+.progress-wrap{margin-bottom:1.5rem}
+.progress-meta{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.progress-track{height:5px;background:#ebebeb;border-radius:3px;overflow:hidden}
+.progress-fill{height:5px;background:#1D9E75;border-radius:3px;transition:width .3s}
+.sentence-num{font-size:11px;font-weight:700;color:#1D9E75;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.sentence-text{font-size:19px;font-weight:600;color:#1a1a1a;line-height:1.45;margin-bottom:1.5rem;min-height:56px;font-style:italic}
+.waveform{height:52px;background:#f5f5f5;border-radius:10px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:center;gap:2px;padding:0 12px;overflow:hidden}
+.wave-bar{width:3px;height:4px;background:#1D9E75;border-radius:2px;transition:height .06s}
+.rec-row{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.rec-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:#1a1a1a;transition:all .15s}
+.rec-btn:hover{background:#f5f5f5}
+.rec-btn.recording{background:#fff0f0;border-color:#f09595;color:#a32d2d}
+.rec-btn:disabled{opacity:.4;cursor:not-allowed}
+.rec-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+.rec-dot{width:8px;height:8px;border-radius:50%;background:#e24b4a;display:none;animation:blink 1s infinite}
+.rec-dot.show{display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.recorded-badge{display:none;align-items:center;gap:6px;font-size:12px;color:#0F6E56;background:#e1f5ee;padding:7px 14px;border-radius:20px;margin-bottom:1.25rem;font-weight:500}
+.recorded-badge.show{display:flex}
+.label-prompt{font-size:13px;color:#666;margin-bottom:10px;font-weight:500}
+.label-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.label-btn{padding:14px;border-radius:12px;border:1.5px solid #e0e0e0;background:#fff;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;color:#1a1a1a}
+.label-btn:disabled{opacity:.35;cursor:not-allowed}
+.truth-btn:hover:not(:disabled){background:#e1f5ee;border-color:#1D9E75;color:#085041}
+.lie-btn:hover:not(:disabled){background:#fff0f0;border-color:#e24b4a;color:#a32d2d}
+.sel-truth{background:#e1f5ee !important;border-color:#1D9E75 !important;color:#085041 !important}
+.sel-lie{background:#fff0f0 !important;border-color:#e24b4a !important;color:#a32d2d !important}
+.error-box{font-size:12px;color:#a32d2d;background:#fff0f0;padding:8px 12px;border-radius:8px;margin-bottom:1rem;display:none;line-height:1.5}
+.error-box.show{display:block}
+.review-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.review-item:last-child{border-bottom:none}
+.review-sentence{color:#555;flex:1;padding-right:12px;font-style:italic}
+.tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.tag-truth{background:#e1f5ee;color:#085041}
+.tag-lie{background:#fff0f0;color:#a32d2d}
+.btn-purple{background:#534AB7;margin-top:1rem}
+.btn-purple:hover{background:#3C3489}
+.status-box{font-size:13px;color:#555;background:#f5f5f5;padding:10px 14px;border-radius:8px;margin-bottom:1rem;display:none;line-height:1.6}
+.done-center{text-align:center;padding:1.5rem 0}
+.done-icon{font-size:56px;margin-bottom:1rem}
+.session-box{font-family:monospace;font-size:12px;background:#f5f5f5;padding:10px 14px;border-radius:8px;color:#666;word-break:break-all;margin:1rem 0;text-align:left}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div id="s-welcome" class="screen active">
+  <div class="logo"><span class="logo-icon">🎙️</span><h1>Voice Truth Analyser</h1></div>
+  <p class="tagline">Help train an AI by recording 10 sentences and labelling each one as true or false for you personally. Takes about 5 minutes.</p>
+  <div class="info-list">
+    <div class="info-item">
+      <div class="info-dot"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3"/></svg></div>
+      Audio files are stored securely and used only for this research project
+    </div>
+    <div class="info-item">
+      <div class="info-dot"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3"/></svg></div>
+      You decide the label — truth or lie — based on your own life
+    </div>
+    <div class="info-item">
+      <div class="info-dot"><svg viewBox="0 0 10 10"><polyline points="2,5 4,7 8,3"/></svg></div>
+      Your contribution helps train a voice classification model
+    </div>
+  </div>
+  <input type="text" id="p-name" placeholder="Your first name">
+  <button class="btn-primary" onclick="startSession()">Start recording &rarr;</button>
+</div>
+
+<div id="s-record" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="prog-label">Sentence 1 of 10</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="sentence-num" id="sent-num">Sentence 01</div>
+  <div class="sentence-text" id="sent-text"></div>
+  <div class="waveform" id="waveform"></div>
+  <div class="rec-row">
+    <button class="rec-btn" id="rec-btn" onclick="toggleRec()">
+      🎙️ <span id="rec-lbl">Start recording</span>
+    </button>
+    <div class="rec-indicator">
+      <span class="rec-dot" id="rec-dot"></span>
+      <span id="rec-time">00:00</span>
+    </div>
+  </div>
+  <div class="recorded-badge" id="rec-badge">✓ Recording saved — now label it below</div>
+  <p class="label-prompt">Is this sentence true or false for you?</p>
+  <div class="label-grid">
+    <button class="label-btn truth-btn" id="truth-btn" onclick="setLabel('truth')" disabled>✓ Truth</button>
+    <button class="label-btn lie-btn" id="lie-btn" onclick="setLabel('lie')" disabled>✗ Lie</button>
+  </div>
+  <div class="error-box" id="rec-err"></div>
+  <button class="btn-primary" id="next-btn" onclick="nextSentence()" disabled>
+    <span id="next-lbl">Next sentence</span> &rarr;
+  </button>
+</div>
+
+<div id="s-review" class="screen">
+  <div class="logo" style="margin-bottom:6px"><span class="logo-icon">📋</span><h1>Review before submitting</h1></div>
+  <p class="tagline" style="margin-bottom:1.25rem">Check your labels below. Once you submit, your recordings are sent to the research team.</p>
+  <div id="review-list"></div>
+  <div class="status-box" id="sub-status"></div>
+  <div class="error-box" id="sub-err"></div>
+  <button class="btn-primary btn-purple" id="sub-btn" onclick="submitAll()">
+    &#8679; Submit all 10 recordings
+  </button>
+</div>
+
+<div id="s-done" class="screen">
+  <div class="done-center">
+    <div class="done-icon">✅</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;color:#1a1a1a">Thank you!</h2>
+    <p style="font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.6">
+      Your 10 recordings have been submitted to the Voice Truth Analyser research project by Muthuvisali, Student at the University of Arizona. The research team has been notified.
+    </p>
+    <div style="font-size:13px;color:#888;margin-bottom:6px;text-align:left;font-weight:500">Your session ID</div>
+    <div class="session-box" id="done-sid"></div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:1.5rem;text-align:left">Save this if you want to follow up about your contribution.</div>
+    <button class="btn-secondary" onclick="resetApp()">&#8635; Record another session</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+emailjs.init('Qfqhm-80fHQkXD2iu');
+
+const SURL='https://iignkvejuropvgbxvgsz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpZ25rdmVqdXJvcHZnYnh2Z3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNTE4NDUsImV4cCI6MjA5NjYyNzg0NX0.gleQuBaUJPqbVA7Ks34DAss3F8vOvqhYhaoKTRIvYv4';
+
+const SENTENCES=[
+  "I am the oldest child in my family",
+  "I know how to swim",
+  "I have lived in more than one city",
+  "I drink coffee every single day",
+  "I have a pet at home",
+  "I wear glasses or contact lenses",
+  "I have travelled outside my home country",
+  "I wake up before 7am on most days",
+  "I have learned to cook my own meals",
+  "I speak more than one language fluently"
+];
+
+let idx=0,sid='',pname='',displayName='';
+let mr=null,chunks=[],recs=[],isRec=false;
+let timer=null,secs=0,wInt=null,actx=null,analyser=null,afr=null;
+
+function sidGen(){return'sess_'+Math.random().toString(36).slice(2,9)+'_'+Date.now().toString(36)}
+function safeName(n){return n.replace(/[^a-zA-Z0-9]/g,'_')}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+function startSession(){
+  const n=document.getElementById('p-name').value.trim();
+  if(!n){alert('Please enter your name.');return}
+  displayName=n;
+  pname=safeName(n);
+  sid=sidGen();idx=0;recs=[];
+  show('s-record');loadSent(0);
+}
+
+function initWave(){
+  const w=document.getElementById('waveform');w.innerHTML='';
+  for(let i=0;i<42;i++){const b=document.createElement('div');b.className='wave-bar';w.appendChild(b)}
+}
+
+function animWave(){
+  const bars=document.querySelectorAll('.wave-bar');
+  if(!analyser){
+    wInt=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*40)+'px'})},70);
+    return;
+  }
+  const d=new Uint8Array(analyser.frequencyBinCount);
+  function draw(){
+    analyser.getByteFrequencyData(d);
+    bars.forEach((b,i)=>{const v=d[Math.floor(i*d.length/bars.length)]||0;b.style.height=Math.max(4,(v/255)*44)+'px'});
+    afr=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function stopWave(){
+  if(afr)cancelAnimationFrame(afr);
+  if(wInt)clearInterval(wInt);
+  initWave();
+}
+
+function loadSent(i){
+  document.getElementById('sent-num').textContent='Sentence '+String(i+1).padStart(2,'0');
+  document.getElementById('sent-text').textContent='"'+SENTENCES[i]+'"';
+  document.getElementById('prog-label').textContent='Sentence '+(i+1)+' of '+SENTENCES.length;
+  document.getElementById('prog-pct').textContent=Math.round((i/SENTENCES.length)*100)+'%';
+  document.getElementById('prog-fill').style.width=(i/SENTENCES.length*100)+'%';
+  document.getElementById('rec-badge').classList.remove('show');
+  document.getElementById('truth-btn').disabled=true;
+  document.getElementById('lie-btn').disabled=true;
+  document.getElementById('truth-btn').className='label-btn truth-btn';
+  document.getElementById('lie-btn').className='label-btn lie-btn';
+  document.getElementById('next-btn').disabled=true;
+  document.getElementById('next-lbl').textContent=i===SENTENCES.length-1?'Review answers':'Next sentence';
+  document.getElementById('rec-btn').disabled=false;
+  document.getElementById('rec-btn').className='rec-btn';
+  document.getElementById('rec-lbl').textContent='Start recording';
+  document.getElementById('rec-time').textContent='00:00';
+  document.getElementById('rec-dot').classList.remove('show');
+  document.getElementById('rec-err').classList.remove('show');
+  initWave();
+  if(recs[i]){
+    document.getElementById('rec-badge').classList.add('show');
+    document.getElementById('truth-btn').disabled=false;
+    document.getElementById('lie-btn').disabled=false;
+    if(recs[i].label){
+      document.getElementById(recs[i].label+'-btn').className='label-btn '+(recs[i].label==='truth'?'truth-btn sel-truth':'lie-btn sel-lie');
+      document.getElementById('next-btn').disabled=false;
+    }
+  }
+}
+
+async function toggleRec(){isRec?stopRec():await startRec()}
+
+async function startRec(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    analyser=actx.createAnalyser();
+    actx.createMediaStreamSource(stream).connect(analyser);
+    mr=new MediaRecorder(stream);chunks=[];
+    mr.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
+    mr.onstop=()=>{
+      const blob=new Blob(chunks,{type:'audio/webm'});
+      if(!recs[idx])recs[idx]={};
+      recs[idx].blob=blob;recs[idx].label=null;
+      document.getElementById('rec-badge').classList.add('show');
+      document.getElementById('truth-btn').disabled=false;
+      document.getElementById('lie-btn').disabled=false;
+      stream.getTracks().forEach(t=>t.stop());
+      if(actx)actx.close();
+    };
+    mr.start();isRec=true;secs=0;
+    timer=setInterval(()=>{
+      secs++;
+      const m=String(Math.floor(secs/60)).padStart(2,'0'),s=String(secs%60).padStart(2,'0');
+      document.getElementById('rec-time').textContent=m+':'+s;
+    },1000);
+    document.getElementById('rec-btn').className='rec-btn recording';
+    document.getElementById('rec-lbl').textContent='Stop recording';
+    document.getElementById('rec-dot').classList.add('show');
+    animWave();
+  }catch(e){
+    const err=document.getElementById('rec-err');
+    err.textContent='Microphone access denied. Please allow microphone in your browser settings and try again.';
+    err.classList.add('show');
+  }
+}
+
+function stopRec(){
+  if(mr&&mr.state!=='inactive')mr.stop();
+  clearInterval(timer);isRec=false;
+  document.getElementById('rec-btn').className='rec-btn';
+  document.getElementById('rec-lbl').textContent='Re-record';
+  document.getElementById('rec-dot').classList.remove('show');
+  stopWave();
+}
+
+function setLabel(lbl){
+  if(!recs[idx]||!recs[idx].blob)return;
+  recs[idx].label=lbl;
+  document.getElementById('truth-btn').className='label-btn truth-btn'+(lbl==='truth'?' sel-truth':'');
+  document.getElementById('lie-btn').className='label-btn lie-btn'+(lbl==='lie'?' sel-lie':'');
+  document.getElementById('next-btn').disabled=false;
+}
+
+function nextSentence(){
+  idx<SENTENCES.length-1?(idx++,loadSent(idx)):showReview();
+}
+
+function showReview(){
+  document.getElementById('review-list').innerHTML=recs.map((r,i)=>`
+    <div class="review-item">
+      <span class="review-sentence">"${SENTENCES[i]}"</span>
+      <span class="tag tag-${r.label}">${r.label}</span>
+    </div>`).join('');
+  show('s-review');
+}
+
+async function uploadAudio(blob,path){
+  const res=await fetch(`${SURL}/storage/v1/object/audio-recordings/${path}`,{
+    method:'POST',
+    headers:{
+      'Authorization':`Bearer ${SKEY}`,
+      'Content-Type':blob.type||'audio/webm',
+      'x-upsert':'true'
+    },
+    body:blob
+  });
+  if(!res.ok){const t=await res.text();throw new Error(`Storage ${res.status}: ${t}`)}
+}
+
+async function insertRow(data){
+  const res=await fetch(`${SURL}/rest/v1/recordings`,{
+    method:'POST',
+    headers:{
+      'Authorization':`Bearer ${SKEY}`,
+      'apikey':SKEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify(data)
+  });
+  if(!res.ok){const t=await res.text();throw new Error(`DB ${res.status}: ${t}`)}
+}
+
+async function sendEmail(name,sessionId,labelSummary){
+  try{
+    await emailjs.send('service_2t4lp1j','template_ejyjzr2',{
+      participant_name: name,
+      session_id: sessionId,
+      sentence_count: '10',
+      label_summary: labelSummary,
+      submitted_at: new Date().toLocaleString('en-US',{timeZone:'America/Phoenix'})
+    });
+  }catch(e){
+    console.warn('Email notification failed:',e);
+  }
+}
+
+async function submitAll(){
+  const btn=document.getElementById('sub-btn');
+  const st=document.getElementById('sub-status');
+  const err=document.getElementById('sub-err');
+  btn.disabled=true;
+  err.classList.remove('show');
+  st.style.display='block';
+
+  const labelSummary=recs.map((r,i)=>`S${i+1}: ${r.label}`).join(' | ');
+
+  for(let i=0;i<recs.length;i++){
+    st.textContent=`Uploading ${i+1} of ${recs.length}...`;
+    try{
+      // File named by person's name, not session ID
+      const fname=`${pname}_sentence${String(i+1).padStart(2,'0')}_${recs[i].label}.webm`;
+      await uploadAudio(recs[i].blob,fname);
+      await insertRow({
+        session_id: sid,
+        sentence_index: i+1,
+        sentence_text: SENTENCES[i],
+        label: recs[i].label,
+        audio_file_path: fname,
+        participant_name: displayName
+      });
+    }catch(e){
+      st.style.display='none';
+      err.textContent=`Upload failed on sentence ${i+1}: ${e.message}`;
+      err.classList.add('show');
+      btn.disabled=false;
+      return;
+    }
+  }
+
+  st.textContent='Sending notification to research team...';
+  await sendEmail(displayName,sid,labelSummary);
+
+  document.getElementById('done-sid').textContent=sid;
+  show('s-done');
+}
+
+function resetApp(){
+  idx=0;recs=[];sid='';displayName='';pname='';
+  document.getElementById('p-name').value='';
+  show('s-welcome');
+}
+</script>
+</body>
+</html>
